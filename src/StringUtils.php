@@ -653,8 +653,8 @@ abstract class StringUtils extends Inflector
 
         $results = '';
 
-        for ($i = 0; $i < strlen($string); $i++) {
-            $ord = hexdec($string[$i]);
+        for ($i=0; $i < strlen($string) - 1; $i+=2) {
+            $ord = hexdec($string[$i] . $string[$i + 1]);
             $results .= chr($ord);
         }
 

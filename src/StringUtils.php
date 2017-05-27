@@ -55,8 +55,8 @@ abstract class StringUtils extends Inflector
     /**
      * Replaces newline with <br> or <br />.
      *
-     * @param string  $string The input string
-     * @param boolean $xhtml  (optional) Should we return XHTML?
+     * @param string $string The input string.
+     * @param bool   $xhtml  (optional) Should we return XHTML?
      *
      * @return string
      */
@@ -75,7 +75,7 @@ abstract class StringUtils extends Inflector
     /**
      * Replaces <br> and <br /> with newline.
      *
-     * @param string $string The input string
+     * @param string $string The input string.
      *
      * @return string
      */
@@ -86,7 +86,9 @@ abstract class StringUtils extends Inflector
                 '<br>',
                 '<br/>',
                 '<br />'
-            ], "\n", $string
+            ],
+            "\n",
+            $string
         );
     }
 
@@ -108,14 +110,16 @@ abstract class StringUtils extends Inflector
             $options['encoding'] = $encoding;
         }
 
-        return StaticFilter::execute(static::camelCaseToUnderscore($value), Filter\UpperCaseWords::class, $options);
+        return StaticFilter::execute(
+            static::camelCaseToUnderscore($value), Filter\UpperCaseWords::class, $options
+        );
     }
 
     /**
      * Creates url friendly string.
      *
-     * @param string $string    The input string
-     * @param string $separator The separator string
+     * @param string $string    The input string.
+     * @param string $separator The separator string.
      * @param array  $options
      *
      * @return string
@@ -132,7 +136,7 @@ abstract class StringUtils extends Inflector
     /**
      * Converts underscore to camel case.
      *
-     * @param string $value The input string
+     * @param string $value The input string.
      *
      * @return string
      * @throws \Zend\Filter\Exception\ExceptionInterface
@@ -145,7 +149,7 @@ abstract class StringUtils extends Inflector
     /**
      * Converts camel case to underscore.
      *
-     * @param string $value The input string
+     * @param string $value The input string.
      *
      * @return string
      * @throws \Zend\Filter\Exception\ExceptionInterface
@@ -158,8 +162,8 @@ abstract class StringUtils extends Inflector
     /**
      * Returns the plural form of a noun (english only).
      *
-     * @param string $noun  Noun to pluralize
-     * @param int    $count (optional) Number of nouns
+     * @param string $noun  Noun to pluralize.
+     * @param int    $count (optional) Number of nouns.
      *
      * @return string
      */
@@ -175,9 +179,9 @@ abstract class StringUtils extends Inflector
     /**
      * Limits the number of characters in a string.
      *
-     * @param string $string     The input string
-     * @param int    $characters (optional) Number of characters to allow
-     * @param string $suffix     (optional) Suffix to add if number of characters is reduced
+     * @param string $string     The input string.
+     * @param int    $characters (optional) Number of characters to allow.
+     * @param string $suffix     (optional) Suffix to add if number of characters is reduced.
      *
      * @return string
      */
@@ -189,9 +193,9 @@ abstract class StringUtils extends Inflector
     /**
      * Limits the number of words in a string.
      *
-     * @param string $string The input string
-     * @param int    $words  (optional) Number of words to allow
-     * @param string $suffix (optional) Suffix to add if number of words is reduced
+     * @param string $string The input string.
+     * @param int    $words  (optional) Number of words to allow.
+     * @param string $suffix (optional) Suffix to add if number of words is reduced.
      *
      * @return string
      */
@@ -210,7 +214,7 @@ abstract class StringUtils extends Inflector
     /**
      * Returns a closure that will alternate between the defined strings.
      *
-     * @param array $strings Array of strings to alternate between
+     * @param array $strings Array of strings to alternate between.
      *
      * @return Closure
      */
@@ -227,9 +231,9 @@ abstract class StringUtils extends Inflector
     /**
      * Returns a masked string where only the last n characters are visible.
      *
-     * @param string $string  String to mask
-     * @param int    $visible (optional) Number of characters to show
-     * @param string $mask    (optional) Character used to replace remaining characters
+     * @param string $string  String to mask.
+     * @param int    $visible (optional) Number of characters to show.
+     * @param string $mask    (optional) Character used to replace remaining characters.
      *
      * @return string
      */
@@ -252,16 +256,16 @@ abstract class StringUtils extends Inflector
     /**
      * Increments a string by appending a number to it or increasing the number.
      *
-     * @param string $string    String to increment
-     * @param int    $start     Starting number
-     * @param string $separator Separator
+     * @param string $string    String to increment.
+     * @param int    $start     Starting number.
+     * @param string $separator The separator.
      *
      * @return string
      */
     public static function increment($string, $start = 1, $separator = '_')
     {
         preg_match(
-            '/(.+)' . preg_quote($separator) . '([0-9]+)$/', $string, $matches
+            '/(.+)' . preg_quote($separator, '/') . '([0-9]+)$/', $string, $matches
         );
 
         /** @noinspection UnSafeIsSetOverArrayInspection */
@@ -273,8 +277,8 @@ abstract class StringUtils extends Inflector
     /**
      * Returns a random string of the selected type and length.
      *
-     * @param string $charLists Character pool to use
-     * @param int    $length    (optional) Desired string length
+     * @param string $charLists Character pool to use.
+     * @param int    $length    (optional) Desired string length.
      *
      * @return string
      */
@@ -498,6 +502,7 @@ abstract class StringUtils extends Inflector
         $results = null;
 
         if (function_exists('openssl_random_pseudo_bytes')) {
+            /** @noinspection CryptographicallySecureRandomnessInspection */
             $results = openssl_random_pseudo_bytes($byteLength);
         } elseif (is_readable('/dev/urandom')) {
             $fileHandler = fopen('/dev/urandom', 'rb');
@@ -507,8 +512,14 @@ abstract class StringUtils extends Inflector
 
                 fclose($fileHandler);
             }
-        } elseif (function_exists('mcrypt_create_iv') && version_compare(PHP_VERSION, '5.3.0', '>=')) {
-            $results = mcrypt_create_iv($byteLength, MCRYPT_DEV_URANDOM);
+        } elseif (function_exists('mcrypt_create_iv')
+                  && version_compare(PHP_VERSION, '5.3.0', '>=')
+        ) {
+            /** @noinspection CryptographicallySecureRandomnessInspection */
+            /** @noinspection PhpDeprecationInspection */
+            $results = mcrypt_create_iv($byteLength, MCRYPT_DEV_RANDOM);
+        } elseif (function_exists('random_bytes')) {
+            $results = random_bytes($byteLength);
         } elseif (class_exists('COM')) {
             /** @noinspection BadExceptionsProcessingInspection */
             try {
@@ -601,7 +612,9 @@ abstract class StringUtils extends Inflector
 
         if ($token === 'a' || $token === 'O') {
             return (bool) preg_match("/^{$token}:[0-9]+:/s", $json);
-        } elseif ($token === 'b' || $token === 'i' || $token === 'd') {
+        }
+
+        if ($token === 'b' || $token === 'i' || $token === 'd') {
             $end = $strict ? '$' : '';
 
             return (bool) preg_match("/^{$token}:[0-9.E-]+;$end/", $json);
@@ -653,8 +666,8 @@ abstract class StringUtils extends Inflector
 
         $results = '';
 
-        for ($i=0; $i < strlen($string) - 1; $i+=2) {
-            $ord = hexdec($string[$i] . $string[$i + 1]);
+        for ($i = 0; $i < strlen($string) - 1; $i += 2) {
+            $ord     = hexdec($string[$i] . $string[$i + 1]);
             $results .= chr($ord);
         }
 

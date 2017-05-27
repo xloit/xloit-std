@@ -48,11 +48,13 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Set an array value using "dot notation".
      *
-     * @param array  $values Array you want to modify
-     * @param string $path   Array path
-     * @param mixed  $value  Value to set
+     * @param array  $values Array you want to modify.
+     * @param string $path   Array path.
+     * @param mixed  $value  Value to set.
+     *
+     * @return void
      */
-    public static function set(&$values, $path, $value)
+    public static function set(array &$values, $path, $value)
     {
         $segments = explode(static::PATH_DELIMITER, $path);
 
@@ -73,10 +75,10 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Search for an array value using "dot notation". Returns TRUE if the array key exists and FALSE if not.
      *
-     * @param array  $values Array we're going to search
-     * @param string $path   Array path
+     * @param array  $values Array we're going to search.
+     * @param string $path   Array path.
      *
-     * @return boolean
+     * @return bool
      */
     public static function has(array $values, $path)
     {
@@ -99,17 +101,19 @@ abstract class ArrayUtils extends ZendArrayUtils
      * and return an array.
      *
      * @example
+     * ```php
      * // Get the value of $array['foo']['bar']
      * $value = ArrayUtils::get($array, 'foo.bar');
      * // Get the values of "color" in theme
      * $colors = ArrayUtils::get($array, 'theme.*.color');
      * // Using an array of keys
      * $colors = ArrayUtils::get($array, array('theme', '*', 'color'));
+     * ```
      *
-     * @param array        $values  array to search
-     * @param string|array $path    key path string (delimiter separated) or array of keys
-     * @param mixed        $default default value if the path is not set
-     * @param boolean      $nullAble
+     * @param array|Traversable $values   Array to search.
+     * @param string|array      $path     A key path string (delimiter separated) or array of keys.
+     * @param mixed             $default  The default value if the path is not set.
+     * @param bool              $nullAble Indicates whether the returned value accept a null.
      *
      * @return mixed
      * @throws Exception\RuntimeException
@@ -120,6 +124,8 @@ abstract class ArrayUtils extends ZendArrayUtils
             // This is not an array!
             return $default;
         }
+
+        $values = static::iteratorToArray($values);
 
         /** @noinspection IsEmptyFunctionUsageInspection */
         if (empty($values)) {
@@ -229,12 +235,12 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Deletes an array value using "dot notation".
      *
-     * @param array  $values Array you want to modify
-     * @param string $path   Array path
+     * @param array  $values Array you want to modify.
+     * @param string $path   Array path.
      *
-     * @return boolean
+     * @return bool
      */
-    public static function delete(&$values, $path)
+    public static function delete(array &$values, $path)
     {
         /** @noinspection ReferenceMismatchInspection */
         if (!static::isArray($values)) {
@@ -263,7 +269,7 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Test if a value is an array with an additional check for array-like objects.
      *
-     * @param mixed $value value to check
+     * @param mixed $value Value to check.
      *
      * @return bool
      */
@@ -281,7 +287,7 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Returns a random value from an array.
      *
-     * @param array $values Array you want to pick a random value from
+     * @param array $values Array you want to pick a random value from.
      *
      * @return mixed
      */
@@ -293,7 +299,7 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Returns TRUE if the array is associative and FALSE if not.
      *
-     * @param array $values Array to check
+     * @param array $values Array to check.
      *
      * @return bool
      */
@@ -305,25 +311,26 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Returns the values from a single column of the input array, identified by the key.
      *
-     * @param array  $values Array to pluck from
-     * @param string $key    Array key
+     * @param array  $values Array to pluck from.
+     * @param string $key    Array key.
      *
      * @return array
      */
     public static function pluck(array $values, $key)
     {
         return array_map(
-            function($value) use ($key) {
-                return is_object($value) ? $value->{$key} : $value[$key];
-            }, $values
+            function($val) use ($key) {
+                return is_object($val) ? $val->{$key} : $val[$key];
+            },
+            $values
         );
     }
 
     /**
      * Build a new array using a callback.
      *
-     * @param array   $values
-     * @param Closure $callback
+     * @param array|Traversable $values
+     * @param Closure           $callback
      *
      * @return array
      */
@@ -331,10 +338,13 @@ abstract class ArrayUtils extends ZendArrayUtils
     {
         $results = [];
 
+        if (!static::isArray($values)) {
+            // This is not an array!
+            return $results;
+        }
+
         foreach ($values as $key => $value) {
-            list($innerKey, $innerValue) = call_user_func(
-                $callback, $key, $value
-            );
+            list($innerKey, $innerValue) = $callback($key, $value);
 
             $results[$innerKey] = $innerValue;
         }
@@ -373,8 +383,8 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Fetch a flattened array of a nested array element.
      *
-     * @param array  $values
-     * @param string $key
+     * @param array|Traversable $values
+     * @param string            $key
      *
      * @return array
      */
@@ -469,8 +479,8 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Filter the array using the given Closure.
      *
-     * @param array   $values
-     * @param Closure $callback
+     * @param array|Traversable $values
+     * @param Closure           $callback
      *
      * @return array
      */
@@ -531,13 +541,13 @@ abstract class ArrayUtils extends ZendArrayUtils
     /**
      * Remove any elements where the callback returns true.
      *
-     * @param array   $values   the array to walk
-     * @param Closure $callback callback takes ($value, $key, $data)
-     * @param mixed   $data     additional data passed to the callback.
+     * @param array|Traversable $values   The array to walk.
+     * @param Closure           $callback The callback takes ($value, $key, $data).
+     * @param mixed             $data     The additional data passed to the callback.
      *
      * @return array
      */
-    public static function arrayWalkRecursiveDelete(array &$values, Closure $callback, $data = null)
+    public static function arrayWalkRecursiveDelete(&$values, Closure $callback, $data = null)
     {
         foreach ($values as $key => &$value) {
             if (is_array($value)) {
@@ -565,9 +575,10 @@ abstract class ArrayUtils extends ZendArrayUtils
     public static function substrInArray($needle, array $haystack)
     {
         $filtered = array_filter(
-            $haystack, function($item) use ($needle) {
-            return false !== strpos($item, $needle);
-        }
+            $haystack,
+            function($item) use ($needle) {
+                return false !== strpos($item, $needle);
+            }
         );
 
         /** @noinspection IsEmptyFunctionUsageInspection */

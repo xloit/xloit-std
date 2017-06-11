@@ -56,17 +56,29 @@ abstract class ArrayUtils extends ZendArrayUtils
      */
     public static function set(array &$values, $path, $value)
     {
-        $segments = explode(static::PATH_DELIMITER, $path);
+        if (is_array($path)) {
+            // The path has already been separated into segments
+            $segments = $path;
+        } else {
+            $path = (string) $path;
+
+            // Remove starting delimiters and spaces
+            $path = ltrim($path, sprintf('%s ', static::PATH_DELIMITER));
+            // Remove ending delimiters, spaces, and wildcards
+            $path = rtrim($path, sprintf('%s %s', static::PATH_DELIMITER, static::PATH_WILDCARD));
+            // Split the segments by delimiter
+            $segments = explode(static::PATH_DELIMITER, $path);
+        }
 
         while (count($segments) > 1) {
-            $segment = array_shift($segments);
+            $key = array_shift($segments);
 
             /** @noinspection ReferenceMismatchInspection */
-            if (!array_key_exists($segment, $values) || !is_array($values[$segment])) {
-                $values[$segment] = [];
+            if (!array_key_exists($key, $values) || !is_array($values[$key])) {
+                $values[$key] = [];
             }
 
-            $values =& $values[$segment];
+            $values =& $values[$key];
         }
 
         $values[array_shift($segments)] = $value;
@@ -82,18 +94,9 @@ abstract class ArrayUtils extends ZendArrayUtils
      */
     public static function has(array $values, $path)
     {
-        /** @var array $segments */
-        $segments = explode(static::PATH_DELIMITER, $path);
+        $defaultValue = __METHOD__ . '::' . random_int(16, 32);
 
-        foreach ($segments as $segment) {
-            if (!array_key_exists($segment, $values) || !is_array($values)) {
-                return false;
-            }
-
-            $values = $values[$segment];
-        }
-
-        return true;
+        return static::get($values, $path, $defaultValue) !== $defaultValue;
     }
 
     /**
@@ -116,7 +119,7 @@ abstract class ArrayUtils extends ZendArrayUtils
      * @param bool              $nullAble Indicates whether the returned value accept a null.
      *
      * @return mixed
-     * @throws Exception\RuntimeException
+     * @throws \Xloit\Std\Exception\RuntimeException
      */
     public static function get($values, $path, $default = null, $nullAble = true)
     {
@@ -226,6 +229,8 @@ abstract class ArrayUtils extends ZendArrayUtils
                         )
                     );
                 }
+
+                break;
             }
         }
 
@@ -248,17 +253,29 @@ abstract class ArrayUtils extends ZendArrayUtils
             return false;
         }
 
-        $segments = explode(static::PATH_DELIMITER, $path);
+        if (is_array($path)) {
+            // The path has already been separated into segments
+            $segments = $path;
+        } else {
+            $path = (string) $path;
+
+            // Remove starting delimiters and spaces
+            $path = ltrim($path, sprintf('%s ', static::PATH_DELIMITER));
+            // Remove ending delimiters, spaces, and wildcards
+            $path = rtrim($path, sprintf('%s %s', static::PATH_DELIMITER, static::PATH_WILDCARD));
+            // Split the segments by delimiter
+            $segments = explode(static::PATH_DELIMITER, $path);
+        }
 
         while (count($segments) > 1) {
-            $segment = array_shift($segments);
+            $key = array_shift($segments);
 
             /** @noinspection ReferenceMismatchInspection */
-            if (!array_key_exists($segment, $values) || !is_array($values[$segment])) {
+            if (!array_key_exists($key, $values) || !is_array($values[$key])) {
                 return false;
             }
 
-            $values =& $values[$segment];
+            $values =& $values[$key];
         }
 
         unset($values[array_shift($segments)]);
